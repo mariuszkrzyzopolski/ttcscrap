@@ -24,6 +24,15 @@ def check_if_suggested_price(list):
             'No-Listings': item_list[5],
             'No-Items': item_list[6]
         }
+    elif len_of_list == 6:
+        data = {
+            'Min': item_list[0],
+            'Average': item_list[1],
+            'Max': item_list[2],
+            'Suggested-Min': item_list[3],
+            'Suggested-Max': item_list[4],
+            'No-Listings': item_list[5]
+        }
     elif len_of_list == 5:
         data = {
             'Min': item_list[0],
@@ -44,7 +53,9 @@ def check_if_suggested_price(list):
 
 class TtcSpider(scrapy.Spider):
     name = "TTC"
-    start_urls = ['https://eu.tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&SearchType=PriceCheck&page=1']
+    download_delay = 7.0
+    page_number = 252
+    start_urls = ['https://eu.tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&SearchType=PriceCheck&page=252']
 
     def parse(self, response):
         rows = response.xpath('//tbody/tr[not(@class)]')
@@ -56,3 +67,10 @@ class TtcSpider(scrapy.Spider):
                 'Level': clean_result(row.css(':nth-child(3) ::text')[1].get()),
                 'Price': check_if_suggested_price(row)
             }
+
+        next_page = 'https://eu.tamrieltradecentre.com/pc/Trade/SearchResult?ItemID=&SearchType=PriceCheck&page=' + \
+                    str(TtcSpider.page_number)
+
+        if TtcSpider.page_number <= 5000:
+            TtcSpider.page_number += 1
+            yield response.follow(next_page, callback=self.parse)
